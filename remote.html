@@ -1,0 +1,61 @@
+<!-- This HTML file is hosted on https://web.thorgalle.me/readup-poc/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Readup Web Ext POC</title>
+</head>
+
+<body>
+    <div id="container"></div>
+    <script>
+        // The ID of the extension we want to talk to.
+        var extensionId = "glandcmdojjgkflmfejohkpnihikemgj";
+
+        // Parse the request URL
+        const url = new URLSearchParams(window.location.search).get('url');
+
+        if (url) {
+            viewURL(url)
+        }
+
+        async function viewURL(url) {
+            const htmlString = await requestHTML(decodeURIComponent(url));
+            if (url.startsWith('https://tweakers.net')) {
+                processTweakersPage(htmlString)
+            } else {
+                processHTMLGeneric(htmlString);
+            }
+        }
+
+        // Request the HTML of the URL with browser cookies via our extension service worker.
+        async function requestHTML(url) {
+            return new Promise((resolve, reject) => {
+                // This API does not seem to be Promise-enabled yet, even though the docs
+                // claim it to be.
+                chrome.runtime.sendMessage(extensionId, { getHTMLFor: url }, (response) => {
+                    resolve(response)
+                })
+            })
+        }
+
+        // Show the received HTML string
+        function processHTMLGeneric(htmlString) {
+            console.log("Response received!", htmlString.substring(1, 100));
+        }
+
+        // To demonstrate parsing a specific website
+        function processTweakersPage(htmlString) {
+            // load/parse the entire document in innerHTML
+            const pageDoc = (new DOMParser()).parseFromString(htmlString, 'text/html');
+            const mainArticleHTML = pageDoc.querySelector('.centeredContent');
+            document.getElementById('container').appendChild(mainArticleHTML);
+        }
+
+    </script>
+</body>
+
+</html>
