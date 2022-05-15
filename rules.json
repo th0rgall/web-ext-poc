@@ -1,0 +1,22 @@
+[
+    {
+        "id": 1,
+        "priority": 1,
+        "action": {
+            "type": "modifyHeaders",
+            "requestHeaders": [
+                {
+                    "header": "Referer",
+                    "operation": "set",
+                    "value": "https://drudgereport.com/"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "www.wsj.com",
+            "resourceTypes": [
+                "xmlhttprequest"
+            ]
+        }
+    }
+]

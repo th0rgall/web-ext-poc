@@ -20,8 +20,11 @@
         const url = params.get('url');
 
         if (url) {
+            // default: true
             const withCredentials = params.get('withCredentials') == 'false' ? false : true;
-            const withScripts = params.get('withScripts') == 'false' ? false : true;
+
+            // default: false
+            const withScripts = params.get('withScripts') == 'true' ? true : false;
             viewURL(url, withCredentials, withScripts)
         }
 

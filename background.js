@@ -35,15 +35,42 @@ chrome.runtime.onMessageExternal.addListener(
     }
 );
 
+
+
 async function getArticleHTMLForURL(url, withCredentials = true) {
     console.log("Fetching URL: ", url);
     return fetch(url, {
         credentials: withCredentials ? "include" : "omit",
         method: "GET",
         mode: "cors",
+        // This won't work, and it will fail silently. Referer is a privileged header.
+        // See https://developer.mozilla.org/en-US/docs/Glossary/Forbidden_header_name
+        //
+        // The way to get around this is (still!) to use declarativeNetRequest.
+        // See ./rules.json
+
+        // headers: {
+        //     "Referer": "https://drudgereport.com/",
+        // }
     })
         .catch(e => console.error("Requesting article page failed ", e))
         .then(r => r.text())
         .catch(e => console.error("HTTP response parsing failed ", e))
 }
 
+
+// var rule = {
+//     conditions: [
+//         new chrome.declarativeWebRequest.RequestMatcher({
+//             url: { hostSuffix: 'wsj.com', stages: ['onBeforeSendHeaders'] }
+//         })
+//     ],
+//     actions: [
+//         new chrome.declarativeWebRequest.SetRequestHeader(() => ({
+//             name: 'Referer',
+//             value: "https://drudgereport.com/"
+//         }))
+//     ]
+// };
+
+// chrome.declarativeWebRequest.onRequest.addRules([rule]);
