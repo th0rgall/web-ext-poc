@@ -16,35 +16,53 @@
         var extensionId = "glandcmdojjgkflmfejohkpnihikemgj";
 
         // Parse the request URL
-        const url = new URLSearchParams(window.location.search).get('url');
+        const params = new URLSearchParams(window.location.search);
+        const url = params.get('url');
 
         if (url) {
-            viewURL(url)
+            const withCredentials = params.get('withCredentials') == 'false' ? false : true;
+            const withScripts = params.get('withScripts') == 'false' ? false : true;
+            viewURL(url, withCredentials, withScripts)
         }
 
-        async function viewURL(url) {
-            const htmlString = await requestHTML(decodeURIComponent(url));
+        async function viewURL(url, withCredentials = true, withScripts = true) {
+
+            const isMedium = url.startsWith('https://medium.com');
+
+            // `!isMedium` demonstrates the ability to also request a page without cookies
+            // For example: if I reached my max limit of Medium articles, I can choose
+            // to not include my cookies, and still get the full article.
+            const shouldIncludeCredentials = (isMedium || !withCredentials) ? false : true
+            const htmlString = await requestHTML(decodeURIComponent(url), shouldIncludeCredentials);
+
             if (url.startsWith('https://tweakers.net')) {
                 processTweakersPage(htmlString)
+            } else if (isMedium) {
+                processMediumPage(htmlString);
             } else {
-                processHTMLGeneric(htmlString);
+                processHTMLGeneric(htmlString, withScripts);
             }
         }
 
         // Request the HTML of the URL with browser cookies via our extension service worker.
-        async function requestHTML(url) {
+        async function requestHTML(url, withCredentials = true) {
             return new Promise((resolve, reject) => {
                 // This API does not seem to be Promise-enabled yet, even though the docs
                 // claim it to be.
-                chrome.runtime.sendMessage(extensionId, { getHTMLFor: url }, (response) => {
+                chrome.runtime.sendMessage(extensionId, { getHTMLFor: url, withCredentials }, (response) => {
                     resolve(response)
                 })
             })
         }
 
         // Show the received HTML string
-        function processHTMLGeneric(htmlString) {
+        function processHTMLGeneric(htmlString, withScripts) {
             console.log("Response received!", htmlString.substring(1, 100));
+            const pageDoc = (new DOMParser()).parseFromString(htmlString, 'text/html');
+            if (!withScripts) {
+                pageDoc.body.querySelectorAll('script').forEach(element => element.remove());
+            }
+            document.getElementById('container').appendChild(pageDoc.body);
         }
 
         // To demonstrate parsing a specific website
@@ -55,6 +73,16 @@
             document.getElementById('container').appendChild(mainArticleHTML);
         }
 
+        function processMediumPage(htmlString) {
+            // load/parse the entire document in innerHTML
+            const pageDoc = (new DOMParser()).parseFromString(htmlString, 'text/html');
+
+            // remove scripts before they are inserted into a page
+            pageDoc.body.querySelectorAll('script').forEach(element => element.remove());
+
+            const mainArticleHTML = pageDoc.querySelector('article.meteredContent');
+            document.getElementById('container').appendChild(mainArticleHTML);
+        }
     </script>
 </body>
 

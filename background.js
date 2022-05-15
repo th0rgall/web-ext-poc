@@ -25,7 +25,7 @@ chrome.runtime.onMessageExternal.addListener(
             return;  // don't allow this web page access
         }
         if (request.getHTMLFor) {
-            const htmlString = await getArticleHTMLForURL(request.getHTMLFor);
+            const htmlString = await getArticleHTMLForURL(request.getHTMLFor, request.withCredentials);
             console.log(htmlString.substring(1, 300))
             sendResponse(htmlString);
         }
@@ -35,20 +35,15 @@ chrome.runtime.onMessageExternal.addListener(
     }
 );
 
-async function getArticleHTMLForURL(url) {
+async function getArticleHTMLForURL(url, withCredentials = true) {
     console.log("Fetching URL: ", url);
     return fetch(url, {
-        credentials: "include",
+        credentials: withCredentials ? "include" : "omit",
         method: "GET",
         mode: "cors",
     })
         .catch(e => console.error("Requesting article page failed ", e))
         .then(r => r.text())
         .catch(e => console.error("HTTP response parsing failed ", e))
-    // .then(t => console.log(t.substring(0, 300)))
-    // .then(t => {
-    //     const paragraph = /<p>(.*Twee weken.*)<\/p>/.exec(t);
-    //     console.log(paragraph[0]);
-    // });
 }
 
